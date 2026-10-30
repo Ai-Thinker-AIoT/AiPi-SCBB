@@ -33,7 +33,15 @@
 #endif
 
 /**
- * @brief 初始化继电器 GPIO 引脚，默认为释放状态
+ * @brief 用运行时指定的引脚初始化继电器，默认为释放状态
+ *
+ * @param pin  继电器控制脚（axk 逻辑引脚号，见 axk_bsp_config.h）
+ * @return int 0: 成功
+ */
+int  axk_relay_init_pin(uint16_t pin);
+
+/**
+ * @brief 用编译期 AXK_RELAY_PIN 初始化继电器
  *
  * @return int  0: 成功
  */

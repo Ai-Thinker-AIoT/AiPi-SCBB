@@ -19,32 +19,50 @@
 #define AXK_OLED_096_SPI_GPIO_SET(p)    AXK_OLED_096_SPI_GPIO_ACLL(set,p)
 #define AXK_OLED_096_SPI_GPIO_RESET(p)    AXK_OLED_096_SPI_GPIO_ACLL(reset,p)
 
+/** @brief 默认配置（来自编译期宏，可被 axk_oled_096_spi_init_cfg() 覆盖） */
+static const axk_oled_096_spi_cfg_t s_default_cfg = {
+    .pin_cs   = AXK_OLED_096_SPI_PIN_CS,
+    .pin_dc   = AXK_OLED_096_SPI_PIN_DC,
+    .pin_rst  = AXK_OLED_096_SPI_PIN_RST,
+    .spi_dev  = AXK_OLED_096_SPI_SPI,
+    .spi_freq = AXK_OLED_096_SPI_FREQ,
+};
+
+/** @brief 当前生效配置 */
+static axk_oled_096_spi_cfg_t s_cfg = {
+    .pin_cs   = AXK_OLED_096_SPI_PIN_CS,
+    .pin_dc   = AXK_OLED_096_SPI_PIN_DC,
+    .pin_rst  = AXK_OLED_096_SPI_PIN_RST,
+    .spi_dev  = AXK_OLED_096_SPI_SPI,
+    .spi_freq = AXK_OLED_096_SPI_FREQ,
+};
+
 /**
  * @brief 片选拉低
  */
 static void axk_oled_cs_low(void) {
-    AXK_OLED_096_SPI_GPIO_RESET(AXK_OLED_096_SPI_PIN_CS);
+    AXK_OLED_096_SPI_GPIO_RESET(s_cfg.pin_cs);
 }
 
 /**
  * @brief 片选拉高
  */
 static void axk_oled_cs_high(void) {
-    AXK_OLED_096_SPI_GPIO_SET(AXK_OLED_096_SPI_PIN_CS);
+    AXK_OLED_096_SPI_GPIO_SET(s_cfg.pin_cs);
 }
 
 /**
  * @brief 数据/命令脚拉低（命令模式）
  */
 static void axk_oled_dc_low(void) {
-    AXK_OLED_096_SPI_GPIO_RESET(AXK_OLED_096_SPI_PIN_DC);
+    AXK_OLED_096_SPI_GPIO_RESET(s_cfg.pin_dc);
 }
 
 /**
  * @brief 数据/命令脚拉高（数据模式）
  */
 static void axk_oled_dc_high(void) {
-    AXK_OLED_096_SPI_GPIO_SET(AXK_OLED_096_SPI_PIN_DC);
+    AXK_OLED_096_SPI_GPIO_SET(s_cfg.pin_dc);
 }
 
 /**
@@ -55,7 +73,7 @@ static void axk_oled_dc_high(void) {
 static void axk_oled_cmd(uint8_t c) {
     axk_oled_dc_low();
     axk_oled_cs_low();
-    AXK_OLED_096_SPI_SEND8(AXK_OLED_096_SPI_SPI, c);
+    AXK_OLED_096_SPI_SEND8(s_cfg.spi_dev, c);
     axk_oled_cs_high();
 }
 
@@ -67,32 +85,40 @@ static void axk_oled_cmd(uint8_t c) {
 static void axk_oled_dat(uint8_t d) {
     axk_oled_dc_high();
     axk_oled_cs_low();
-    AXK_OLED_096_SPI_SEND8(AXK_OLED_096_SPI_SPI, d);
+    AXK_OLED_096_SPI_SEND8(s_cfg.spi_dev, d);
     axk_oled_cs_high();
 }
 
 static uint8_t s_axk_oled_fb[128][8];
 
 /**
- * @brief 初始化 SSD1306 OLED：GPIO、SPI、初始化序列、清屏
+ * @brief 用运行时配置初始化 SSD1306 OLED：GPIO、SPI、初始化序列、清屏
  *
- * @return int  0: 成功
+ * @param[in]  cfg  配置结构体指针，不可为 NULL
+ * @return     int  0: 成功，-1: 参数错误
  */
-int axk_oled_096_spi_init(void) {
-    AXK_OLED_096_SPI_GPIO_INIT(AXK_OLED_096_SPI_PIN_CS, 1);
+int axk_oled_096_spi_init_cfg(const axk_oled_096_spi_cfg_t *cfg) {
+    bsp_spi_cfg_t c;
+
+    if (cfg == NULL || cfg->spi_dev == NULL) {
+        return -1;
+    }
+    s_cfg = *cfg;
+
+    AXK_OLED_096_SPI_GPIO_INIT(s_cfg.pin_cs, 1);
     axk_oled_cs_high();
-    AXK_OLED_096_SPI_GPIO_INIT(AXK_OLED_096_SPI_PIN_DC, 1);
+    AXK_OLED_096_SPI_GPIO_INIT(s_cfg.pin_dc, 1);
     axk_oled_dc_high();
-    AXK_OLED_096_SPI_GPIO_INIT(AXK_OLED_096_SPI_PIN_RST, 1);
-    AXK_OLED_096_SPI_GPIO_RESET(AXK_OLED_096_SPI_PIN_RST);
+    AXK_OLED_096_SPI_GPIO_INIT(s_cfg.pin_rst, 1);
+    AXK_OLED_096_SPI_GPIO_RESET(s_cfg.pin_rst);
     AXK_OLED_096_SPI_DELAY_MS(10);
-    AXK_OLED_096_SPI_GPIO_SET(AXK_OLED_096_SPI_PIN_RST);
+    AXK_OLED_096_SPI_GPIO_SET(s_cfg.pin_rst);
     AXK_OLED_096_SPI_DELAY_MS(100);
 
-    AXK_OLED_096_SPI_GPIO_INIT(AXK_OLED_096_SPI_PIN_SDA, 2);
-    AXK_OLED_096_SPI_GPIO_INIT(AXK_OLED_096_SPI_PIN_SCL, 3);
-    bsp_spi_cfg_t c = {.freq = 4000000, .mode = 3, .data_width = 8};
-    AXK_OLED_096_SPI_SPI_INIT(AXK_OLED_096_SPI_SPI, &c);
+    c.freq = (s_cfg.spi_freq != 0u) ? s_cfg.spi_freq : AXK_OLED_096_SPI_FREQ;
+    c.mode = 3;
+    c.data_width = 8;
+    AXK_OLED_096_SPI_SPI_INIT(s_cfg.spi_dev, &c);
 
     uint8_t init[] = {
         0xAE,        /* 关闭显示 */
@@ -118,6 +144,15 @@ int axk_oled_096_spi_init(void) {
     axk_oled_096_spi_clear(0);
     axk_oled_096_spi_flush();
     return 0;
+}
+
+/**
+ * @brief 用编译期默认配置初始化 SSD1306 OLED
+ *
+ * @return int  0: 成功，错误码同 axk_oled_096_spi_init_cfg()
+ */
+int axk_oled_096_spi_init(void) {
+    return axk_oled_096_spi_init_cfg(&s_default_cfg);
 }
 
 /**

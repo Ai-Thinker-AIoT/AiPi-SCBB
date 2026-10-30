@@ -53,7 +53,17 @@ typedef struct {
 } axk_ds1302_time_t;
 
 /**
- * @brief 初始化 DS1302 GPIO 引脚
+ * @brief 用运行时指定的 3 个引脚初始化 DS1302
+ *
+ * @param pin_ce   使能脚（axk 逻辑引脚号）
+ * @param pin_sclk 时钟脚
+ * @param pin_io   数据 I/O 脚
+ * @return int     0: 成功
+ */
+int  axk_ds1302_init_pins(uint16_t pin_ce, uint16_t pin_sclk, uint16_t pin_io);
+
+/**
+ * @brief 用编译期 AXK_DS1302_PIN_* 初始化 DS1302
  *
  * @return int  0: 成功
  */

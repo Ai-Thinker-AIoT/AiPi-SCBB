@@ -25,9 +25,9 @@ static uint8_t s_axk_dht11_data[5];
  * @param[in]  timeout_us  超时时间（微秒）
  * @return     int         0: 达到目标电平，-1: 超时
  */
-static int axk_dht11_wait_level(int level, uint32_t timeout_us) {
+static int axk_dht11_wait_level(uint16_t pin, int level, uint32_t timeout_us) {
     uint32_t t = 0;
-    while (AXK_DHT11_GPIO_READ(AXK_DHT11_PIN) != level) {
+    while (AXK_DHT11_GPIO_READ(pin) != level) {
         if (++t > timeout_us) {
             return -1;
         }
@@ -51,37 +51,37 @@ static int axk_dht11_wait_level(int level, uint32_t timeout_us) {
  *              - -6: 等待位低电平超时
  *              - -7: 校验和不匹配
  */
-int axk_dht11_read(float *temp, float *humi) {
+int axk_dht11_read_pin(uint16_t pin, float *temp, float *humi) {
     if (!temp || !humi) {
         return -1;
     }
 
-    AXK_DHT11_GPIO_INIT(AXK_DHT11_PIN, 1);
-    AXK_DHT11_GPIO_RESET(AXK_DHT11_PIN); AXK_DHT11_DELAY_MS(18);
-    AXK_DHT11_GPIO_SET(AXK_DHT11_PIN); AXK_DHT11_DELAY_US(30);
-    AXK_DHT11_GPIO_INIT(AXK_DHT11_PIN, 0);
+    AXK_DHT11_GPIO_INIT(pin, 1);
+    AXK_DHT11_GPIO_RESET(pin); AXK_DHT11_DELAY_MS(18);
+    AXK_DHT11_GPIO_SET(pin); AXK_DHT11_DELAY_US(30);
+    AXK_DHT11_GPIO_INIT(pin, 0);
 
-    if (axk_dht11_wait_level(0, 100) < 0) {
+    if (axk_dht11_wait_level(pin, 0, 100) < 0) {
         return -2;
     }
-    if (axk_dht11_wait_level(1, 100) < 0) {
+    if (axk_dht11_wait_level(pin, 1, 100) < 0) {
         return -3;
     }
-    if (axk_dht11_wait_level(0, 100) < 0) {
+    if (axk_dht11_wait_level(pin, 0, 100) < 0) {
         return -4;
     }
 
     for (int i = 0; i < 5; i++) {
         uint8_t v = 0;
         for (int b = 7; b >= 0; b--) {
-            if (axk_dht11_wait_level(1, 100) < 0) {
+            if (axk_dht11_wait_level(pin, 1, 100) < 0) {
                 return -5;
             }
             AXK_DHT11_DELAY_US(30);
-            if (AXK_DHT11_GPIO_READ(AXK_DHT11_PIN)) {
+            if (AXK_DHT11_GPIO_READ(pin)) {
                 v |= (1u << b);
             }
-            if (axk_dht11_wait_level(0, 100) < 0) {
+            if (axk_dht11_wait_level(pin, 0, 100) < 0) {
                 return -6;
             }
         }
@@ -96,5 +96,10 @@ int axk_dht11_read(float *temp, float *humi) {
     *humi = (float)s_axk_dht11_data[0] + (float)s_axk_dht11_data[1] * 0.1f;
     *temp = (float)s_axk_dht11_data[2] + (float)s_axk_dht11_data[3] * 0.1f;
     return 0;
+}
+
+/* 兼容旧接口：数据脚用编译期 AXK_DHT11_PIN（默认 0，可被工程 CFLAGS 覆盖） */
+int axk_dht11_read(float *temp, float *humi) {
+    return axk_dht11_read_pin(AXK_DHT11_PIN, temp, humi);
 }
 #endif /* SCBB_DHT11_ENABLED */

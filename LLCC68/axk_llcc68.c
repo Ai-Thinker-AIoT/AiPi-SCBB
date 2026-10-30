@@ -19,8 +19,17 @@
 
 #include "axk_llcc68.h"
 
+#ifdef SCBB_LLCC68_ENABLED
+
 /*! DIO1 中断回调(由用户在 EXTI 中断中调用 axk_llcc68_irq_cb 触发) */
 static void (*s_axk_dio_irq)(void *context);
+
+/*! 运行时引脚/总线配置(默认取编译期宏,可被 axk_llcc68_init_cfg 覆盖) */
+static const char *s_llcc68_spi_dev  = AXK_LLCC68_SPI_NAME;
+static uint16_t    s_llcc68_nss_pin  = AXK_LLCC68_NSS_PIN;
+static uint16_t    s_llcc68_nrst_pin = AXK_LLCC68_NRESET_PIN;
+static uint16_t    s_llcc68_busy_pin = AXK_LLCC68_BUSY_PIN;
+static uint16_t    s_llcc68_dio1_pin = AXK_LLCC68_DIO1_PIN;
 
 /**
  * @brief 等待芯片 BUSY 引脚拉低(带超时打印,防止死等)
@@ -33,7 +42,7 @@ void LLCC68WaitOnBusy(void)
 {
     uint32_t cnt = 0;
 
-    while (AXK_LLCC68_GPIO_ACLL(read, AXK_LLCC68_BUSY_PIN) == 1) {
+    while (AXK_LLCC68_GPIO_ACLL(read, s_llcc68_busy_pin) == 1) {
         if ((++cnt) > 1000) {
             printf("wait busy pin timeout\r\n");
             cnt = 0;
@@ -51,9 +60,9 @@ void LLCC68WaitOnBusy(void)
 void LLCC68SetNss(uint8_t lev)
 {
     if (lev) {
-        AXK_LLCC68_GPIO_ACLL(set, AXK_LLCC68_NSS_PIN);
+        AXK_LLCC68_GPIO_ACLL(set, s_llcc68_nss_pin);
     } else {
-        AXK_LLCC68_GPIO_ACLL(reset, AXK_LLCC68_NSS_PIN);
+        AXK_LLCC68_GPIO_ACLL(reset, s_llcc68_nss_pin);
     }
 }
 
@@ -65,7 +74,7 @@ void LLCC68SetNss(uint8_t lev)
  */
 uint8_t LLCC68SpiInOut(uint8_t data)
 {
-    return AXK_LLCC68_SPI_ACLL(transfer8, AXK_LLCC68_SPI_NAME, data);
+    return AXK_LLCC68_SPI_ACLL(transfer8, s_llcc68_spi_dev, data);
 }
 
 /**
@@ -103,17 +112,17 @@ void LLCC68IoInit(void)
     bsp_spi_cfg_t spi_cfg;
 
     /* NSS/复位:推挽输出;BUSY:上拉输入;DIO1:浮空输入 */
-    AXK_LLCC68_GPIO_ACLL(init, AXK_LLCC68_NSS_PIN, 1);
-    AXK_LLCC68_GPIO_ACLL(set, AXK_LLCC68_NSS_PIN);
-    AXK_LLCC68_GPIO_ACLL(init, AXK_LLCC68_NRESET_PIN, 1);
-    AXK_LLCC68_GPIO_ACLL(init, AXK_LLCC68_BUSY_PIN, 4);
-    AXK_LLCC68_GPIO_ACLL(init, AXK_LLCC68_DIO1_PIN, 0);
+    AXK_LLCC68_GPIO_ACLL(init, s_llcc68_nss_pin, 1);
+    AXK_LLCC68_GPIO_ACLL(set, s_llcc68_nss_pin);
+    AXK_LLCC68_GPIO_ACLL(init, s_llcc68_nrst_pin, 1);
+    AXK_LLCC68_GPIO_ACLL(init, s_llcc68_busy_pin, 4);
+    AXK_LLCC68_GPIO_ACLL(init, s_llcc68_dio1_pin, 0);
 
     /* SPI 模式 0:CPOL=0, CPHA=0 */
     spi_cfg.freq = 8000000;
     spi_cfg.mode = 0;
     spi_cfg.data_width = 8;
-    if (AXK_LLCC68_SPI_ACLL(init, AXK_LLCC68_SPI_NAME, &spi_cfg) != 0) {
+    if (AXK_LLCC68_SPI_ACLL(init, s_llcc68_spi_dev, &spi_cfg) != 0) {
         printf("spi1 init error\r\n");
         return;
     }
@@ -142,9 +151,9 @@ void LLCC68IoIrqInit(DioIrqHandler dioIrq)
 void LLCC68ResetInit(void)
 {
     AXK_LLCC68_DELAY_MS(10);
-    AXK_LLCC68_GPIO_ACLL(reset, AXK_LLCC68_NRESET_PIN);
+    AXK_LLCC68_GPIO_ACLL(reset, s_llcc68_nrst_pin);
     AXK_LLCC68_DELAY_MS(20);
-    AXK_LLCC68_GPIO_ACLL(set, AXK_LLCC68_NRESET_PIN);
+    AXK_LLCC68_GPIO_ACLL(set, s_llcc68_nrst_pin);
     AXK_LLCC68_DELAY_MS(10);
 }
 
@@ -202,6 +211,29 @@ void LLCC68RxTimerStart(void) { }
 void LLCC68RxTimerStop(void) { }
 
 /* ================== SCBB 公共 API ================== */
+
+/**
+ * @brief 用运行时配置初始化 LLCC68(引脚/SPI/复位/默认收发参数)
+ *
+ * @param[in]  events  事件回调结构指针,可为 NULL(忽略事件)
+ * @param[in]  cfg     引脚配置,不可为 NULL
+ * @return     int     0: 成功,-1: 参数错误
+ */
+int axk_llcc68_init_cfg(const axk_llcc68_events_t *events,
+                        const axk_llcc68_cfg_t *cfg)
+{
+    if (cfg == NULL || cfg->spi_dev == NULL) {
+        return -1;
+    }
+
+    s_llcc68_spi_dev  = cfg->spi_dev;
+    s_llcc68_nss_pin  = cfg->nss_pin;
+    s_llcc68_nrst_pin = cfg->nreset_pin;
+    s_llcc68_busy_pin = cfg->busy_pin;
+    s_llcc68_dio1_pin = cfg->dio1_pin;
+
+    return axk_llcc68_init(events);
+}
 
 /**
  * @brief 初始化 LLCC68(引脚/SPI/复位/默认收发参数)
@@ -2698,3 +2730,5 @@ void RadioIrqProcess( void )
     }
 }
 
+
+#endif /* SCBB_LLCC68_ENABLED */

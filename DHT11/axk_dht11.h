@@ -50,5 +50,18 @@
  */
 int  axk_dht11_read(float *temp, float *humi);
 
+/**
+ * @brief 用运行时指定的引脚执行一次完整读取
+ *
+ * 与 axk_dht11_read() 相同，只是数据脚由调用方传入，可在 main() 或
+ * 任务里直接选择，不需要工程级 -DAXK_DHT11_PIN。
+ *
+ * @param[in]  pin    数据脚（axk 逻辑引脚号，见 axk_bsp_config.h）
+ * @param[out] *temp  温度输出指针（摄氏度），不可为 NULL
+ * @param[out] *humi  湿度输出指针（%RH），不可为 NULL
+ * @return     int    操作状态，错误码含义同 axk_dht11_read()
+ */
+int  axk_dht11_read_pin(uint16_t pin, float *temp, float *humi);
+
 #endif /* SCBB_DHT11_ENABLED */
 #endif /* AXK_DHT11_H */

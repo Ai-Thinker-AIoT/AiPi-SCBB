@@ -52,17 +52,28 @@
 #endif
 
 /*!
- * @brief 引脚配置(按需修改)。
- * GPIO 引脚编码:低 4 位为引脚号(0~15),高 4 位为端口号
- * (0=GPIOA, 1=GPIOB, 2=GPIOC, 3=GPIOD)。
+ * @brief 引脚配置(默认值,可覆盖)。
+ * GPIO 引脚编码使用 axk 逻辑引脚号(AXK_BSP_GPIO_PIN(port, pin)),即
+ * bit[8:9] = 端口(0=A, 1=B, 2=C),bit[7:0] = 端口内序号。
  * 默认值对应安信可 STM32F103 参考接线:NSS=PA4, RESET=PB14,
  * BUSY=PA0, DIO1=PB1。
+ * 运行时可用 axk_llcc68_init_cfg() 覆盖,无需改头文件。
  */
+#ifndef AXK_LLCC68_SPI_NAME
 #define AXK_LLCC68_SPI_NAME         "spi1"  /**< SPI 总线名称 */
+#endif
+#ifndef AXK_LLCC68_NSS_PIN
 #define AXK_LLCC68_NSS_PIN          4       /**< NSS 片选引脚(PA4) */
-#define AXK_LLCC68_NRESET_PIN       0x0E    /**< 复位引脚(PB14) */
+#endif
+#ifndef AXK_LLCC68_NRESET_PIN
+#define AXK_LLCC68_NRESET_PIN       0x10E   /**< 复位引脚(PB14) */
+#endif
+#ifndef AXK_LLCC68_BUSY_PIN
 #define AXK_LLCC68_BUSY_PIN         0       /**< BUSY 忙检测引脚(PA0) */
-#define AXK_LLCC68_DIO1_PIN         0x01    /**< DIO1 中断引脚(PB1) */
+#endif
+#ifndef AXK_LLCC68_DIO1_PIN
+#define AXK_LLCC68_DIO1_PIN         0x101   /**< DIO1 中断引脚(PB1) */
+#endif
 
 /*!
  * @brief 默认射频参数(按需修改)。
@@ -988,7 +999,31 @@ void RadioIrqProcess(void);
 /* ================== SCBB 公共 API ================== */
 
 /**
- * @brief 初始化 LLCC68(引脚/SPI/复位/默认收发参数)
+ * @brief LLCC68 运行时配置(引脚/总线)
+ *
+ * spi_dev 必须是常量字符串(如 "spi1"),结构体按值拷贝。
+ * 引脚使用 axk 逻辑引脚号(AXK_BSP_GPIO_PIN(port, pin))。
+ */
+typedef struct {
+    const char *spi_dev;      /**< SPI 设备名,"spi0" / "spi1" */
+    uint16_t    nss_pin;      /**< NSS 片选脚 */
+    uint16_t    nreset_pin;   /**< 复位脚 */
+    uint16_t    busy_pin;     /**< BUSY 忙检测脚 */
+    uint16_t    dio1_pin;     /**< DIO1 中断脚 */
+} axk_llcc68_cfg_t;
+
+/**
+ * @brief 用运行时配置初始化 LLCC68(引脚/SPI/复位/默认收发参数)
+ *
+ * @param[in]  events  事件回调结构指针,可为 NULL
+ * @param[in]  cfg     引脚配置,不可为 NULL
+ * @return     int     0: 成功,-1: 参数错误
+ */
+int axk_llcc68_init_cfg(const axk_llcc68_events_t *events,
+                        const axk_llcc68_cfg_t *cfg);
+
+/**
+ * @brief 用编译期默认配置初始化 LLCC68(引脚/SPI/复位/默认收发参数)
  *
  * @param[in]  events  事件回调结构指针,可为 NULL
  * @return     int     0: 成功

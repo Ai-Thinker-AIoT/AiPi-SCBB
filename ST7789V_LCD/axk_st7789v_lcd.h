@@ -1,17 +1,21 @@
 /**
  * @file axk_st7789v_lcd.h
- * @brief ST7789V 驱动芯片通用 LCD 模块（硬件 SPI）。
+ * @brief ST7789V 驱动芯片通用 LCD 模块（SPI，纯 ACLL 跨平台）。
  *
  * 适用于所有 ST7789V 驱动屏幕：1.47"、1.69"、1.9"、2.0" 等。
- * 只需配置分辨率、偏移量和引脚即可适配。
- * 跨平台：Bouffalo BL616/BL618、STM32、任意 C99 32 位 MCU。
+ * 分辨率、偏移量、片选/数据/复位/背光引脚都可以在运行时通过
+ * axk_st7789v_lcd_cfg_t 指定，不需要改 BSP 或工程编译选项。
  *
- * 默认引脚（BL616，可通过 #define 覆盖）：
- *   SCL=IO13, SDA=IO11, CS=IO10, DC=IO1, RST=IO18, BLK=IO20
+ * 注意：SPI 的 SCL/SDA 属于总线引脚，不归模块管，由所选 BSP 统一配置。
+ * axk 平台见 BSP/axk/axk_bsp_config.h 里的 AXK_BSP_SPI0_* / AXK_BSP_SPI1_*；
+ * 换总线引脚请改 BSP 配置，不是改这里的结构体。
+ *
+ * 默认模块引脚（AI-M6x / BL616，可通过 #define 覆盖）：
+ *   CS=IO10, DC=IO1, RST=IO18, BLK=IO20
  *
  * @author xemowo (xemowo@qq.com)
- * @version 0.1.1
- * @date 2026-07-31
+ * @version 0.2.0
+ * @date 2026-10-30
  *
  * @copyright Copyright (c) 2026
  */
@@ -35,7 +39,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/** @brief 显示宽度（像素） */
+/** @brief 显示宽度（像素，默认 1.47" 屏） */
 #ifndef AXK_ST7789V_LCD_WIDTH
 #define AXK_ST7789V_LCD_WIDTH   172
 #endif
@@ -52,12 +56,6 @@
 #define AXK_ST7789V_LCD_OFFSET_Y 0
 #endif
 
-#ifndef AXK_ST7789V_LCD_PIN_SCL
-#define AXK_ST7789V_LCD_PIN_SCL   13    /**< SPI 时钟脚 */
-#endif
-#ifndef AXK_ST7789V_LCD_PIN_SDA
-#define AXK_ST7789V_LCD_PIN_SDA   11    /**< SPI MOSI 数据脚 */
-#endif
 #ifndef AXK_ST7789V_LCD_PIN_CS
 #define AXK_ST7789V_LCD_PIN_CS    10    /**< 片选脚（低有效） */
 #endif
@@ -71,20 +69,61 @@
 #define AXK_ST7789V_LCD_PIN_BLK   20    /**< 背光控制脚 */
 #endif
 
+/**
+ * @brief pin_blk 取该值时表示“没有背光控制脚”
+ *
+ * 有些板子（如 AiPi-Clock-Mini）背光直接接 3V3 常亮，没有 BLK 控制脚。
+ * 此时 cfg.pin_blk 填 AXK_ST7789V_LCD_PIN_NONE，驱动会跳过背光脚的
+ * 初始化和开关，避免误驱动一块板上恰好复用该脚的外设。
+ */
+#ifndef AXK_ST7789V_LCD_PIN_NONE
+#define AXK_ST7789V_LCD_PIN_NONE  0xFFFFu
+#endif
+#ifndef AXK_ST7789V_LCD_BL_ACTIVE_HIGH
+#define AXK_ST7789V_LCD_BL_ACTIVE_HIGH 1 /**< 背光有效电平：1 高有效，0 低有效 */
+#endif
+
 #ifndef AXK_ST7789V_LCD_SPI_DEV
-#define AXK_ST7789V_LCD_SPI_DEV   "spi0" /**< SPI 设备名 */
+#define AXK_ST7789V_LCD_SPI_DEV   "spi0" /**< SPI 设备名（对应 BSP 的引脚组） */
 #endif
 #ifndef AXK_ST7789V_LCD_SPI_FREQ
 #define AXK_ST7789V_LCD_SPI_FREQ  40000000 /**< SPI 时钟频率（Hz） */
 #endif
 
 /**
- * @brief 通过 SPI 初始化 ST7789V LCD 并配置 GPIO
+ * @brief ST7789V LCD 运行时配置
  *
- * 上电显示，发送初始化指令序列，清屏，开启背光。
+ * 在 main() 或任务里填好结构体后调用 axk_st7789v_lcd_init_cfg() 即可，
+ * spi_dev 必须是常量字符串（如 "spi0"），结构体按值拷贝，不需要长期持有。
+ */
+typedef struct {
+    uint16_t    pin_cs;                 /**< 片选脚（axk 逻辑引脚号） */
+    uint16_t    pin_dc;                 /**< 数据/命令选择脚 */
+    uint16_t    pin_rst;                /**< 复位脚 */
+    uint16_t    pin_blk;                /**< 背光控制脚 */
+    uint16_t    width;                  /**< 显示宽度（像素） */
+    uint16_t    height;                 /**< 显示高度（像素） */
+    uint16_t    offset_x;               /**< X 偏移（GRAM 居中用） */
+    uint16_t    offset_y;               /**< Y 偏移 */
+    const char *spi_dev;                /**< SPI 设备名，"spi0" / "spi1" */
+    uint32_t    spi_freq;               /**< SPI 时钟频率（Hz） */
+    uint8_t     backlight_active_high;  /**< 1: 高电平点亮；0: 低电平点亮 */
+} axk_st7789v_lcd_cfg_t;
+
+/**
+ * @brief 用运行时配置初始化 ST7789V LCD
  *
- * @return int  0: 成功
- * @note  Bouffalo 平台需依赖 lcd.h 和 bflb_gpio.h
+ * 执行硬件复位、SPI 初始化、面板初始化序列、清屏，并打开背光。
+ *
+ * @param[in]  cfg  配置结构体指针，不可为 NULL；width/height/spi_dev 必须有效
+ * @return     int  0: 成功，-1: 参数错误，-2: SPI 初始化失败
+ */
+int  axk_st7789v_lcd_init_cfg(const axk_st7789v_lcd_cfg_t *cfg);
+
+/**
+ * @brief 用编译期 AXK_ST7789V_LCD_* 默认配置初始化
+ *
+ * @return int  0: 成功，错误码同 axk_st7789v_lcd_init_cfg()
  */
 int  axk_st7789v_lcd_init(void);
 

@@ -26,6 +26,16 @@ macro(scbb_read_config)
     if(EXISTS "${_config_path}")
         file(READ "${_config_path}" _config_content)
 
+        # The header contains two branches: the open-SDK one (driven by
+        # aiio_autoconf.h) and the standalone one.  CMake builds the
+        # standalone flavour, so only parse text from "#else /* standalone
+        # build */" onwards -- otherwise the open branch's
+        # "#define SCBB_<MODULE>_ENABLED" lines would switch every module on.
+        string(FIND "${_config_content}" "#else /* standalone build */" _standalone_pos)
+        if(NOT _standalone_pos EQUAL -1)
+            string(SUBSTRING "${_config_content}" ${_standalone_pos} -1 _config_content)
+        endif()
+
         set(_all_modules CH224A SHT3X WS2812 HXD039B2 ST7789V_LCD RELAY DHT11 RD03_V2 OLED_096_SPI DS1302 INA226 LLCC68)
         foreach(_mod ${_all_modules})
             if(_config_content MATCHES "#define SCBB_${_mod}_ENABLED")
@@ -286,6 +296,13 @@ if(SCBB_USE_BSP)
         list(APPEND SCBB_BSP_DIRS gpio delay)
     endif()
 
+    # axk 平台：把全部外设封装目录都编进来（应用按需调用，
+    # 没被引用的静态库不会被链接进最终镜像）
+    if(SCBB_BSP_PLATFORM STREQUAL "axk")
+        list(APPEND SCBB_BSP_DIRS adc delay flash gpio i2c i2s ir nvs
+             pwm pwmcap radar rtc sleep spi system uart wdt)
+    endif()
+
     # Multiple modules may share the same BSP protocol directory
     # (e.g. two I2C sensors both need i2c + delay). Deduplicate so
     # add_subdirectory() is only called once per directory.
@@ -439,6 +456,15 @@ if(SCBB_SOURCES)
             if(TARGET aipi_bsp_delay)
                 target_link_libraries(aipi_scbb PUBLIC aipi_bsp_delay)
             endif()
+        endif()
+        # axk 平台：把额外外设封装库也挂上，模块/应用可直接调用
+        if(SCBB_BSP_PLATFORM STREQUAL "axk")
+            foreach(dir adc delay flash gpio i2c i2s ir nvs
+                        pwm pwmcap radar rtc sleep spi system uart wdt)
+                if(TARGET aipi_bsp_${dir})
+                    target_link_libraries(aipi_scbb PUBLIC aipi_bsp_${dir})
+                endif()
+            endforeach()
         endif()
     else()
         # Export per-module BSP headers and prefixes as compile definitions

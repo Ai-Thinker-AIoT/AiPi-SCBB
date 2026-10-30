@@ -8,7 +8,7 @@ Ai-Thinker 通用外设驱动库，为 I2C、SPI、PWM+DMA、UART、GPIO、单�
 
 平台无关设计 — 库通过可配置的 BSP（板级支持包）宏实现硬件抽象，你可以为任何 MCU 平台提供自己的 BSP 实现。
 
-内置 BSP：`BSP/Ai-M6x`（BL616/BL618，博流 Bouffalo SDK）和 `BSP/stm32f10x`（STM32 HAL）。
+内置 BSP：`BSP/Ai-M6x`（BL616/BL618，博流 Bouffalo SDK）、`BSP/stm32f10x`（STM32 HAL）和 `BSP/axk`（aithinker_dev_open_sdk 中间件，支持 open SDK 的全部芯片：BL602/BL616/BL616CL/BL618/BS21/LN882H/RTL8711DX/RTL8711FX/RTL8720DX）。
 
 ## 项目简介
 
@@ -227,7 +227,8 @@ AiPi-SCBB/
 ├── ST7789V_LCD/      # ST7789V LCD 驱动（SPI）
 ├── BSP/              # 板级支持包
 │   ├── Ai-M6x/       # 博流 BL616/BL618 板级支持包（I2C, SPI, UART, GPIO, LCD, delay）
-│   └── stm32f10x/    # STM32F10x 板级支持包（I2C, SPI, UART, GPIO, PWM+DMA, delay）
+│   ├── stm32f10x/    # STM32F10x 板级支持包（I2C, SPI, UART, GPIO, PWM+DMA, delay）
+│   └── axk/          # open SDK（aiio_*）板级支持包，适配全部受支持芯片
 ├── scripts/          # 配置生成脚本
 ├── Kconfig           # menuconfig 配置定义
 ├── menuconfig.py     # 图形化配置工具入口

@@ -29,6 +29,10 @@ static axk_hxd039b2_circular_buf_t s_axk_hxd_recv_buf;
 static volatile unsigned char s_axk_ac_code[2] = {0x03, 0xF8};
 static const unsigned char s_axk_learn_cmd[] = {0x30, 0x70, 0xA0};
 
+/** @brief 运行时配置（默认取编译期宏，可被 axk_hxd039b2_init_cfg 覆盖） */
+static uint16_t s_hxd_busy_pin = AXK_HXD039B2_BUSY_PIN;
+static uint32_t s_hxd_start_time_ms = AXK_HXD039B2_START_TIME_MS;
+
 /** @brief 初始化环形缓冲区。
  *
  *  @param[in]  cb  环形缓冲区指针。
@@ -110,7 +114,7 @@ static int axk_hxd039b2_send_data(const unsigned char *data, int data_len) {
     if (data == NULL || data_len <= 0) {
         return -1;
     }
-    if (AXK_HXD039B2_GPIO_ACLL(read, AXK_HXD039B2_BUSY_PIN) == 0) {
+    if (AXK_HXD039B2_GPIO_ACLL(read, s_hxd_busy_pin) == 0) {
         return -2;
     }
     for (int i = 0; i < data_len; i++) {
@@ -124,9 +128,22 @@ static int axk_hxd039b2_send_data(const unsigned char *data, int data_len) {
  *
  * @return int  0: 成功
  */
+int axk_hxd039b2_init_cfg(const axk_hxd039b2_cfg_t *cfg) {
+    if (cfg == NULL) {
+        return -1;
+    }
+
+    s_hxd_busy_pin = cfg->busy_pin;
+    s_hxd_start_time_ms = (cfg->start_time_ms != 0u)
+                              ? cfg->start_time_ms
+                              : AXK_HXD039B2_START_TIME_MS;
+
+    return axk_hxd039b2_init();
+}
+
 int axk_hxd039b2_init(void) {
     AXK_HXD039B2_UART_ACLL(init);
-    AXK_HXD039B2_GPIO_ACLL(init, AXK_HXD039B2_BUSY_PIN, 1);
+    AXK_HXD039B2_GPIO_ACLL(init, s_hxd_busy_pin, 1);
 
     unsigned char code[2];
     code[0] = s_axk_ac_code[0];
@@ -202,9 +219,9 @@ int axk_hxd039b2_get_ac_code(unsigned char *code) {
  *              - 0: 学习指令发送完成
  */
 int axk_hxd039b2_start_learn(void) {
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     axk_hxd039b2_send_data(s_axk_learn_cmd, 3);
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS * 10);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms * 10);
     return 0;
 }
 
@@ -218,7 +235,7 @@ int axk_hxd039b2_start_learn(void) {
  *              - -2: 芯片忙碌
  */
 int axk_hxd039b2_set_power(int power_state) {
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -242,7 +259,7 @@ int axk_hxd039b2_set_mode(int mode) {
     if (mode < 0 || mode > 4) {
         return -3;
     }
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -266,7 +283,7 @@ int axk_hxd039b2_set_temperature(unsigned char temperature) {
     if (temperature < 16 || temperature > 31) {
         return -3;
     }
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -290,7 +307,7 @@ int axk_hxd039b2_set_fan_mode(unsigned char fan_mode) {
     if (fan_mode > 3) {
         return -3;
     }
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -314,7 +331,7 @@ int axk_hxd039b2_set_trend(unsigned char trend) {
     if (trend > 2) {
         return -3;
     }
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -334,7 +351,7 @@ int axk_hxd039b2_set_trend(unsigned char trend) {
  *              - -2: 芯片忙碌
  */
 int axk_hxd039b2_set_trend_auto(unsigned char trend_auto) {
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {
@@ -355,7 +372,7 @@ int axk_hxd039b2_set_trend_auto(unsigned char trend_auto) {
  *              - -2: 芯片忙碌
  */
 int axk_hxd039b2_set_light_power(unsigned char light_power) {
-    AXK_HXD039B2_DELAY_MS(AXK_HXD039B2_START_TIME_MS);
+    AXK_HXD039B2_DELAY_MS(s_hxd_start_time_ms);
     unsigned char code0 = s_axk_ac_code[0];
     unsigned char code1 = s_axk_ac_code[1];
     unsigned char ir_code[5] = {

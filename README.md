@@ -8,7 +8,7 @@ Ai-Thinker general-purpose peripheral driver library providing a unified hardwar
 
 Platform-agnostic by design — the library uses configurable BSP (Board Support Package) macros, allowing you to port it to any MCU platform by providing your own BSP implementations.
 
-Built-in BSPs: `BSP/Ai-M6x` (BL616/BL618, Bouffalo SDK) and `BSP/stm32f10x` (STM32 HAL).
+Built-in BSPs: `BSP/Ai-M6x` (BL616/BL618, Bouffalo SDK), `BSP/stm32f10x` (STM32 HAL), and `BSP/axk` (aithinker_dev_open_sdk middleware — works on every chip the open SDK supports: BL602/BL616/BL616CL/BL618/BS21/LN882H/RTL8711DX/RTL8711FX/RTL8720DX).
 
 ## Overview
 
@@ -227,7 +227,8 @@ AiPi-SCBB/
 ├── ST7789V_LCD/      # ST7789V LCD driver (SPI)
 ├── BSP/              # Board Support Packages
 │   ├── Ai-M6x/       # Bouffalo BL616/BL618 BSP (I2C, SPI, UART, GPIO, LCD, delay)
-│   └── stm32f10x/    # STM32F10x BSP (I2C, SPI, UART, GPIO, PWM+DMA, delay)
+│   ├── stm32f10x/    # STM32F10x BSP (I2C, SPI, UART, GPIO, PWM+DMA, delay)
+│   └── axk/          # open SDK (aiio_*) BSP for all supported chips
 ├── scripts/          # Config generation scripts
 ├── Kconfig           # menuconfig configuration definitions
 ├── menuconfig.py     # Graphical configuration tool entry point

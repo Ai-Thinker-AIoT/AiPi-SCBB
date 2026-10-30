@@ -8,8 +8,6 @@
  */
 #include <stdint.h>
 
-#include "log.h"
-
 #include "axk_ch224.h"
 
 #ifdef SCBB_CH224A_ENABLED

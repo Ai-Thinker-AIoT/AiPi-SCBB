@@ -2,7 +2,7 @@
 
 ## What this is
 
-Multi-platform peripheral driver library with a configurable BSP (Board Support Package) abstraction. Built-in BSPs: **Ai-M6x** (Bouffalo BL616/BL618, bflb SDK) and **STM32F10x** (ARM Cortex-M3, HAL-based). Provides hardware abstraction for external components over I2C, SPI, PWM+DMA, UART, and GPIO. Depends on **FreeRTOS** and the platform SDK/HAL (e.g. `stm32f1xx_hal.h`). This is a **library**, not a complete firmware — there is no linker script or `main()` here.
+Multi-platform peripheral driver library with a configurable BSP (Board Support Package) abstraction. Built-in BSPs: **Ai-M6x** (Bouffalo BL616/BL618, bflb SDK), **STM32F10x** (ARM Cortex-M3, HAL-based), and **axk** (aiio middleware, chip-independent — works on every chip the open SDK ports). Provides hardware abstraction for external components over I2C, SPI, PWM+DMA, UART, and GPIO. Depends on **FreeRTOS** and the platform SDK/HAL (e.g. `stm32f1xx_hal.h`). This is a **library**, not a complete firmware — there is no linker script or `main()` here.
 
 ## 环境准备（Windows）
 
@@ -62,7 +62,7 @@ cmake --build build
 | 选项 | 默认 | 说明 |
 |------|------|------|
 | `SCBB_USE_BSP` | OFF | 使用内置 BSP（配合 `SCBB_BSP_PLATFORM` 选择平台） |
-| `SCBB_BSP_PLATFORM` | `Ai-M6x` | 内置 BSP 平台（`Ai-M6x` / `stm32f10x`） |
+| `SCBB_BSP_PLATFORM` | `Ai-M6x` | 内置 BSP 平台（`Ai-M6x` / `stm32f10x` / `axk`） |
 | `SCBB_CH224A` | OFF | USB-PD 驱动 (I2C) |
 | `SCBB_SHT3X` | OFF | 温湿度传感器 (I2C) |
 | `SCBB_WS2812` | OFF | LED 灯条驱动 (PWM+DMA) |
@@ -89,8 +89,9 @@ cmake --build build
 | `ST7789V_LCD/` | ST7789V SPI LCD driver | SPI |
 | `BSP/Ai-M6x/` | Bouffalo BL616/BL618 BSP: I2C, SPI, UART, GPIO, LCD, delay | — |
 | `BSP/stm32f10x/` | STM32F10x BSP: I2C, SPI, UART, GPIO, PWM+DMA, delay | — |
+| `BSP/axk/` | Chip-independent BSP on the aiio middleware (all open-SDK chips): module contract (GPIO/I2C/SPI/UART/delay) + wrappers for every open-SDK peripheral (ADC, PWM, PWM capture, HW I2C/SPI, I2S, IR, RTC, WDT, flash, NVS, sleep, system) | — |
 
-Each platform lives under `BSP/<platform>/<protocol>/`. Protocol sub-directories: `i2c/`, `spi/`, `uart/`, `gpio/`, `pwm_dma/` (WS2812 DMA driver), `delay/` (us/ms delay), plus platform extras such as `BSP/Ai-M6x/lcd/` and `BSP/Ai-M6x/freertos/`.
+Each platform lives under `BSP/<platform>/<protocol>/`. Protocol sub-directories: `i2c/`, `spi/`, `uart/`, `gpio/`, `pwm_dma/` (WS2812 DMA driver), `delay/` (us/ms delay), plus platform extras such as `BSP/Ai-M6x/lcd/` and `BSP/Ai-M6x/freertos/`. `BSP/axk/` has no `pwm_dma` (WS2812 needs sub-µs PWM+DMA, not feasible over the generic GPIO API) and its ST7789V module still requires the BL SDK's `lcd.h`. In addition to the five module-contract protocols, `BSP/axk/` contains `adc/`, `flash/`, `i2s/`, `ir/`, `nvs/`, `pwm/`, `pwmcap/`, `radar/`, `rtc/`, `sleep/`, `system/` and `wdt/` — wrappers over every remaining open-SDK peripheral. Those use `AXK_BSP_WEAK` references so a chip whose port lacks an API still links and returns `AXK_BSP_ERR_UNSUPPORTED` at runtime.
 
 ## I2C abstraction pattern
 

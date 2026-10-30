@@ -16,27 +16,31 @@
 #define AXK_DS1302_GPIO_RESET(p)   AXK_DS1302_GPIO_ACLL(reset,p)
 #define AXK_DS1302_GPIO_READ(p)  AXK_DS1302_GPIO_ACLL(read,p)
 
+static uint16_t s_axk_ds1302_pin_ce   = AXK_DS1302_PIN_CE;
+static uint16_t s_axk_ds1302_pin_sclk = AXK_DS1302_PIN_SCLK;
+static uint16_t s_axk_ds1302_pin_io   = AXK_DS1302_PIN_IO;
+
 /**
  * @brief 数据脚切换为输出模式
  */
 static void axk_ds1302_io_out(void) {
-    AXK_DS1302_GPIO_INIT(AXK_DS1302_PIN_IO, 1);
+    AXK_DS1302_GPIO_INIT(s_axk_ds1302_pin_io, 1);
 }
 
 /**
  * @brief 数据脚切换为输入模式
  */
 static void axk_ds1302_io_in(void) {
-    AXK_DS1302_GPIO_INIT(AXK_DS1302_PIN_IO, 0);
+    AXK_DS1302_GPIO_INIT(s_axk_ds1302_pin_io, 0);
 }
 
 /**
  * @brief 产生一个时钟脉冲（SCLK 拉高-延时-拉低）
  */
 static void axk_ds1302_sclk(void) {
-    AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_SCLK);
+    AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_sclk);
     AXK_DS1302_DELAY_US(1);
-    AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_SCLK);
+    AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_sclk);
 }
 
 /**
@@ -49,13 +53,13 @@ static uint8_t axk_ds1302_rw_byte(uint8_t d) {
     uint8_t r = 0;
     for (int i = 0; i < 8; i++) {
         if ((d & 1) != 0) {
-            AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_IO);
+            AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_io);
         } else {
-            AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_IO);
+            AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_io);
         }
         d >>= 1;
         axk_ds1302_sclk();
-        if (AXK_DS1302_GPIO_READ(AXK_DS1302_PIN_IO)) {
+        if (AXK_DS1302_GPIO_READ(s_axk_ds1302_pin_io)) {
             r |= (1u << i);
         }
     }
@@ -63,15 +67,31 @@ static uint8_t axk_ds1302_rw_byte(uint8_t d) {
 }
 
 /**
- * @brief 初始化 DS1302 GPIO 引脚
+ * @brief 用运行时指定的 3 个引脚初始化 DS1302
+ *
+ * @param pin_ce   使能脚
+ * @param pin_sclk 时钟脚
+ * @param pin_io   数据 I/O 脚
+ * @return int     0: 成功
+ */
+int axk_ds1302_init_pins(uint16_t pin_ce, uint16_t pin_sclk, uint16_t pin_io) {
+    s_axk_ds1302_pin_ce   = pin_ce;
+    s_axk_ds1302_pin_sclk = pin_sclk;
+    s_axk_ds1302_pin_io   = pin_io;
+
+    AXK_DS1302_GPIO_INIT(s_axk_ds1302_pin_ce, 1); AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_ce);
+    AXK_DS1302_GPIO_INIT(s_axk_ds1302_pin_sclk, 1); AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_sclk);
+    axk_ds1302_io_out(); AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_io);
+    return 0;
+}
+
+/**
+ * @brief 用编译期 AXK_DS1302_PIN_* 初始化 DS1302
  *
  * @return int  0: 成功
  */
 int axk_ds1302_init(void) {
-    AXK_DS1302_GPIO_INIT(AXK_DS1302_PIN_CE, 1); AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_CE);
-    AXK_DS1302_GPIO_INIT(AXK_DS1302_PIN_SCLK, 1); AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_SCLK);
-    axk_ds1302_io_out(); AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_IO);
-    return 0;
+    return axk_ds1302_init_pins(AXK_DS1302_PIN_CE, AXK_DS1302_PIN_SCLK, AXK_DS1302_PIN_IO);
 }
 
 /**
@@ -104,14 +124,14 @@ int axk_ds1302_get_time(axk_ds1302_time_t *t) {
     if (!t) {
         return -1;
     }
-    AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_CE);
+    AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_ce);
     axk_ds1302_rw_byte(0xBF);
     uint8_t raw[7];
     for (int i = 0; i < 7; i++) {
         axk_ds1302_io_in();
         raw[i] = axk_ds1302_rw_byte(0);
     }
-    AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_CE);
+    AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_ce);
     t->sec  = axk_ds1302_bcd2dec(raw[0] & 0x7F);
     t->min  = axk_ds1302_bcd2dec(raw[1]);
     t->hour = axk_ds1302_bcd2dec(raw[2] & 0x3F);
@@ -139,11 +159,11 @@ int axk_ds1302_set_time(const axk_ds1302_time_t *t) {
         t->year < 0 || t->year > 99) {
         return -2;
     }
-    AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_CE);
+    AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_ce);
     axk_ds1302_rw_byte(0x8E);
     axk_ds1302_rw_byte(0x00);
-    AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_CE);
-    AXK_DS1302_GPIO_SET(AXK_DS1302_PIN_CE);
+    AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_ce);
+    AXK_DS1302_GPIO_SET(s_axk_ds1302_pin_ce);
     axk_ds1302_rw_byte(0xBE);
     uint8_t d[] = { axk_ds1302_dec2bcd(t->sec), axk_ds1302_dec2bcd(t->min), axk_ds1302_dec2bcd(t->hour),
                     axk_ds1302_dec2bcd(t->day), axk_ds1302_dec2bcd(t->mon), axk_ds1302_dec2bcd(t->week), axk_ds1302_dec2bcd(t->year) };
@@ -151,7 +171,7 @@ int axk_ds1302_set_time(const axk_ds1302_time_t *t) {
     for (int i = 0; i < 7; i++) {
         axk_ds1302_rw_byte(d[i]);
     }
-    AXK_DS1302_GPIO_RESET(AXK_DS1302_PIN_CE);
+    AXK_DS1302_GPIO_RESET(s_axk_ds1302_pin_ce);
     return 0;
 }
 #endif /* SCBB_DS1302_ENABLED */

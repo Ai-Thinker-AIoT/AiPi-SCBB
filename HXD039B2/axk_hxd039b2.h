@@ -27,8 +27,12 @@
 #include SCBB_HXD039B2_DELAY_HEADER
 #endif
 
-#define AXK_HXD039B2_BUSY_PIN 1       /**< 忙检测脚 */
-#define AXK_HXD039B2_START_TIME_MS 70 /**< 发送起始延时（ms） */
+#ifndef AXK_HXD039B2_BUSY_PIN
+#define AXK_HXD039B2_BUSY_PIN 1       /**< 忙检测脚（默认值，可覆盖） */
+#endif
+#ifndef AXK_HXD039B2_START_TIME_MS
+#define AXK_HXD039B2_START_TIME_MS 70 /**< 发送起始延时（ms，默认值，可覆盖） */
+#endif
 
 /** @brief HXD039B2 空调红外指令字节值 */
 typedef enum {
@@ -71,7 +75,26 @@ typedef enum {
 } axk_hxd039b2_ir_code_byte_t;
 
 /**
- * @brief 初始化 HXD039B2 UART、GPIO，读取已存储空调码
+ * @brief HXD039B2 运行时配置
+ *
+ * UART 的 TX/RX 属于总线脚，由 BSP 配置
+ * （axk 平台见 axk_bsp_uart_init_ex() 或 scbb_board_config.h）。
+ */
+typedef struct {
+    uint16_t busy_pin;       /**< 忙检测脚（axk 逻辑引脚号） */
+    uint32_t start_time_ms;  /**< 发送起始延时（ms），0 用默认值 */
+} axk_hxd039b2_cfg_t;
+
+/**
+ * @brief 用运行时配置初始化 HXD039B2 UART、GPIO，读取已存储空调码
+ *
+ * @param[in]  cfg  配置结构体指针，不可为 NULL
+ * @return     int  0: 成功，-1: 参数错误
+ */
+int axk_hxd039b2_init_cfg(const axk_hxd039b2_cfg_t *cfg);
+
+/**
+ * @brief 用编译期默认配置初始化 HXD039B2 UART、GPIO，读取已存储空调码
  *
  * @return int  0: 成功
  */

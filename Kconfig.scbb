@@ -1,0 +1,480 @@
+# AiPi-SCBB core configuration: module enables + generic pin assignment.
+#
+# This file is sourceable (no mainmenu). It is consumed by:
+#   - Kconfig            (standalone CMake builds, via menuconfig.py)
+#   - the application's app_config/Kconfig (open SDK: the app sources this
+#     fragment, so ./build.sh <chip> <app> menuconfig configures SCBB)
+#
+# It must NOT contain board/product names. In the open SDK an application
+# (vendor/<chip>/app_config/.config) is the board definition. No open SDK
+# build script is modified: the app's own Kconfig pulls this file in, and
+# scbb_config.h reads the resulting CONFIG_* values from aiio_autoconf.h.
+
+menu "AiPi-SCBB"
+
+config SCBB_CH224A_ENABLED
+    bool "Enable CH224A I2C USB-PD driver"
+    default n
+    help
+        Enable CH224A I2C USB-PD driver.
+
+if SCBB_CH224A_ENABLED
+    config SCBB_CH224A_I2C_HEADER
+        string "CH224A - I2C BSP header"
+        default "axk_bsp_i2c.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_i2c.h"
+
+    config SCBB_CH224A_I2C_PREFIX
+        string "CH224A - I2C BSP function prefix"
+        default "axk_bsp_i2c_soft" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_i2c"
+
+    config SCBB_CH224A_DELAY_HEADER
+        string "CH224A - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_delay.h"
+
+    config SCBB_CH224A_DELAY_PREFIX
+        string "CH224A - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "delay"
+endif
+
+config SCBB_SHT3X_ENABLED
+    bool "Enable SHT3x [I2C temperature/humidity sensor]"
+    default n
+
+if SCBB_SHT3X_ENABLED
+    config SCBB_SHT3X_I2C_HEADER
+        string "SHT3x - I2C BSP header"
+        default "axk_bsp_i2c.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_i2c.h"
+
+    config SCBB_SHT3X_I2C_PREFIX
+        string "SHT3x - I2C BSP function prefix"
+        default "axk_bsp_i2c_soft" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_i2c"
+
+    config SCBB_SHT3X_DELAY_HEADER
+        string "SHT3x - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_delay.h"
+
+    config SCBB_SHT3X_DELAY_PREFIX
+        string "SHT3x - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "delay"
+endif
+
+config SCBB_WS2812_ENABLED
+    bool "Enable WS2812 [PWM+DMA LED strip driver]"
+    default n
+
+if SCBB_WS2812_ENABLED
+    config SCBB_WS2812_PWM_DMA_HEADER
+        string "WS2812 - PWM DMA BSP header"
+        default "stm32f10x_pwm_dma.h"
+
+    config SCBB_WS2812_PWM_DMA_PREFIX
+        string "WS2812 - PWM DMA BSP function prefix"
+        default "bsp_pwm_dma"
+endif
+
+config SCBB_HXD039B2_ENABLED
+    bool "Enable HXD039B2 [UART IR encoder/decoder]"
+    default n
+
+if SCBB_HXD039B2_ENABLED
+    config SCBB_HXD039B2_UART_HEADER
+        string "HXD039B2 - UART BSP header"
+        default "axk_bsp_uart.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_uart.h"
+
+    config SCBB_HXD039B2_UART_PREFIX
+        string "HXD039B2 - UART BSP function prefix"
+        default "axk_bsp_uart_legacy" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_uart"
+
+    config SCBB_HXD039B2_GPIO_HEADER
+        string "HXD039B2 - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_gpio.h"
+
+    config SCBB_HXD039B2_GPIO_PREFIX
+        string "HXD039B2 - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+
+    config SCBB_HXD039B2_DELAY_HEADER
+        string "HXD039B2 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_delay.h"
+
+    config SCBB_HXD039B2_DELAY_PREFIX
+        string "HXD039B2 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "delay"
+endif
+
+config SCBB_ST7789V_LCD_ENABLED
+    bool "Enable ST7789V_LCD [ST7789V SPI LCD driver, any size]"
+    default n
+
+if SCBB_ST7789V_LCD_ENABLED
+    config SCBB_ST7789V_LCD_SPI_HEADER
+        string "ST7789V_LCD - SPI BSP header"
+        default "axk_bsp_spi.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_spi.h"
+
+    config SCBB_ST7789V_LCD_SPI_PREFIX
+        string "ST7789V_LCD - SPI BSP function prefix"
+        default "axk_bsp_spi" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_spi"
+
+    config SCBB_ST7789V_LCD_GPIO_HEADER
+        string "ST7789V_LCD - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_gpio.h"
+
+    config SCBB_ST7789V_LCD_GPIO_PREFIX
+        string "ST7789V_LCD - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+
+    config SCBB_ST7789V_LCD_DELAY_HEADER
+        string "ST7789V_LCD - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+
+    config SCBB_ST7789V_LCD_DELAY_PREFIX
+        string "ST7789V_LCD - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_RELAY_ENABLED
+    bool "Enable RELAY [GPIO relay, HIGH active]"
+    default n
+
+if SCBB_RELAY_ENABLED
+    config SCBB_RELAY_GPIO_HEADER
+        string "RELAY - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_gpio.h"
+
+    config SCBB_RELAY_GPIO_PREFIX
+        string "RELAY - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+
+    config SCBB_RELAY_DELAY_HEADER
+        string "RELAY - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+
+    config SCBB_RELAY_DELAY_PREFIX
+        string "RELAY - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_DHT11_ENABLED
+    bool "Enable DHT11 [temperature/humidity sensor, One-Wire]"
+    default n
+
+if SCBB_DHT11_ENABLED
+    config SCBB_DHT11_GPIO_HEADER
+        string "DHT11 - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_gpio.h"
+    config SCBB_DHT11_GPIO_PREFIX
+        string "DHT11 - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+    config SCBB_DHT11_DELAY_HEADER
+        string "DHT11 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+    config SCBB_DHT11_DELAY_PREFIX
+        string "DHT11 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_RD03_V2_ENABLED
+    bool "Enable RD03_V2 [mmWave radar, UART RX only]"
+    default n
+
+if SCBB_RD03_V2_ENABLED
+    config SCBB_RD03_V2_UART_HEADER
+        string "RD03_V2 - UART BSP header"
+        default "axk_bsp_uart.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_uart.h"
+    config SCBB_RD03_V2_UART_PREFIX
+        string "RD03_V2 - UART BSP function prefix"
+        default "axk_bsp_uart" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_uart"
+    config SCBB_RD03_V2_DELAY_HEADER
+        string "RD03_V2 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+    config SCBB_RD03_V2_DELAY_PREFIX
+        string "RD03_V2 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+
+config SCBB_INA226_ENABLED
+    bool "Enable INA226 [I2C voltage/current sensor]"
+    default n
+
+if SCBB_INA226_ENABLED
+    config SCBB_INA226_I2C_HEADER
+        string "INA226 - I2C BSP header"
+        default "axk_bsp_i2c.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_i2c.h"
+    config SCBB_INA226_I2C_PREFIX
+        string "INA226 - I2C BSP function prefix"
+        default "axk_bsp_i2c" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_i2c"
+    config SCBB_INA226_DELAY_HEADER
+        string "INA226 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+    config SCBB_INA226_DELAY_PREFIX
+        string "INA226 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_DS1302_ENABLED
+    bool "Enable DS1302 [RTC clock, GPIO]"
+    default n
+
+if SCBB_DS1302_ENABLED
+    config SCBB_DS1302_GPIO_HEADER
+        string "DS1302 - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_gpio.h"
+    config SCBB_DS1302_GPIO_PREFIX
+        string "DS1302 - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+    config SCBB_DS1302_DELAY_HEADER
+        string "DS1302 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+    config SCBB_DS1302_DELAY_PREFIX
+        string "DS1302 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_OLED_096_SPI_ENABLED
+    bool "Enable OLED_096_SPI [0.96 SSD1306 OLED 128x64 SPI]"
+    default n
+
+if SCBB_OLED_096_SPI_ENABLED
+    config SCBB_OLED_096_SPI_SPI_HEADER
+        string "OLED_096_SPI - SPI BSP header"
+        default "axk_bsp_spi.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_spi.h"
+    config SCBB_OLED_096_SPI_SPI_PREFIX
+        string "OLED_096_SPI - SPI BSP function prefix"
+        default "axk_bsp_spi" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_spi"
+    config SCBB_OLED_096_SPI_GPIO_HEADER
+        string "OLED_096_SPI - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_gpio.h"
+    config SCBB_OLED_096_SPI_GPIO_PREFIX
+        string "OLED_096_SPI - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+    config SCBB_OLED_096_SPI_DELAY_HEADER
+        string "OLED_096_SPI - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "bl616_bsp_delay.h"
+    config SCBB_OLED_096_SPI_DELAY_PREFIX
+        string "OLED_096_SPI - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_delay"
+endif
+
+config SCBB_LLCC68_ENABLED
+    bool "Enable LLCC68 [LoRa sub-GHz RF transceiver, SPI]"
+    default n
+
+if SCBB_LLCC68_ENABLED
+    config SCBB_LLCC68_SPI_HEADER
+        string "LLCC68 - SPI BSP header"
+        default "axk_bsp_spi.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_spi.h"
+    config SCBB_LLCC68_SPI_PREFIX
+        string "LLCC68 - SPI BSP function prefix"
+        default "axk_bsp_spi" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_spi"
+    config SCBB_LLCC68_GPIO_HEADER
+        string "LLCC68 - GPIO BSP header"
+        default "axk_bsp_gpio.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_bsp_gpio.h"
+    config SCBB_LLCC68_GPIO_PREFIX
+        string "LLCC68 - GPIO BSP function prefix"
+        default "axk_bsp_gpio" if SCBB_BSP_PLATFORM = "axk"
+        default "bsp_gpio"
+    config SCBB_LLCC68_DELAY_HEADER
+        string "LLCC68 - Delay BSP header"
+        default "axk_bsp_delay.h" if SCBB_BSP_PLATFORM = "axk"
+        default "stm32f10x_delay.h"
+    config SCBB_LLCC68_DELAY_PREFIX
+        string "LLCC68 - Delay BSP function prefix"
+        default "axk_bsp_delay" if SCBB_BSP_PLATFORM = "axk"
+        default "delay"
+endif
+
+# --------------------------------------------------------------------------
+# Pin assignment
+#
+# No board presets here. In the open SDK the board is the application:
+# its app_config/.config carries these values as CONFIG_AXK_*, exactly
+# like CONFIG_AT_UART_PIN_TX does. A manual scbb_board_config.h still
+# overrides everything (the generated defines are #ifndef-guarded).
+# --------------------------------------------------------------------------
+menu "Pin assignment"
+
+menu "SPI bus pins"
+    config AXK_BSP_SPI0_SCLK_PIN
+        int "SPI0 SCLK pin"
+        default 13
+    config AXK_BSP_SPI0_MOSI_PIN
+        int "SPI0 MOSI pin"
+        default 11
+    config AXK_BSP_SPI0_MISO_PIN
+        int "SPI0 MISO pin"
+        default 11
+    config AXK_BSP_SPI1_SCLK_PIN
+        int "SPI1 SCLK pin"
+        default 5
+    config AXK_BSP_SPI1_MOSI_PIN
+        int "SPI1 MOSI pin"
+        default 19
+    config AXK_BSP_SPI1_MISO_PIN
+        int "SPI1 MISO pin"
+        default 19
+endmenu
+
+menu "I2C bus pins"
+    config AXK_BSP_I2C_SOFT_SCL_PIN
+        int "Soft I2C SCL pin"
+        default 8
+    config AXK_BSP_I2C_SOFT_SDA_PIN
+        int "Soft I2C SDA pin"
+        default 18
+    config AXK_BSP_I2C_SOFT_DELAY_US
+        int "Soft I2C half-period delay (us)"
+        default 5
+    config AXK_BSP_I2C_SCL_PIN
+        int "Hardware I2C SCL pin"
+        default 4
+    config AXK_BSP_I2C_SDA_PIN
+        int "Hardware I2C SDA pin"
+        default 5
+endmenu
+
+menu "UART bus pins"
+    config SCBB_CUSTOM_UART_PINS
+        bool "Override chip default UART pins"
+        default n
+        help
+            By default the BSP uses the chip spec's UART pins. Enable
+            this only when the board routes UART elsewhere. The numbers
+            below are logical GPIO numbers (BL602 example: UART0
+            TX=16/RX=7, UART1 TX=4/RX=5).
+    if SCBB_CUSTOM_UART_PINS
+        config AXK_BSP_UART0_TX_PIN
+            int "UART0 TX pin"
+            default 16
+        config AXK_BSP_UART0_RX_PIN
+            int "UART0 RX pin"
+            default 7
+        config AXK_BSP_UART1_TX_PIN
+            int "UART1 TX pin"
+            default 4
+        config AXK_BSP_UART1_RX_PIN
+            int "UART1 RX pin"
+            default 5
+    endif
+endmenu
+
+menu "Module pins"
+    if SCBB_ST7789V_LCD_ENABLED
+        config AXK_ST7789V_LCD_PIN_CS
+            int "ST7789V CS pin"
+            default 10
+        config AXK_ST7789V_LCD_PIN_DC
+            int "ST7789V DC pin"
+            default 1
+        config AXK_ST7789V_LCD_PIN_RST
+            int "ST7789V RST pin"
+            default 18
+        config AXK_ST7789V_LCD_PIN_BLK
+            int "ST7789V BLK pin (65535 = no backlight pin)"
+            default 20
+    endif
+    if SCBB_DHT11_ENABLED
+        config AXK_DHT11_PIN
+            int "DHT11 data pin"
+            default 0
+    endif
+    if SCBB_RELAY_ENABLED
+        config AXK_RELAY_PIN
+            int "Relay control pin"
+            default 0
+    endif
+    if SCBB_DS1302_ENABLED
+        config AXK_DS1302_PIN_CE
+            int "DS1302 CE pin"
+            default 16
+        config AXK_DS1302_PIN_SCLK
+            int "DS1302 SCLK pin"
+            default 15
+        config AXK_DS1302_PIN_IO
+            int "DS1302 IO pin"
+            default 14
+    endif
+    if SCBB_OLED_096_SPI_ENABLED
+        config AXK_OLED_096_SPI_PIN_CS
+            int "OLED CS pin"
+            default 10
+        config AXK_OLED_096_SPI_PIN_DC
+            int "OLED DC pin"
+            default 1
+        config AXK_OLED_096_SPI_PIN_RST
+            int "OLED RST pin"
+            default 18
+    endif
+    if SCBB_HXD039B2_ENABLED
+        config AXK_HXD039B2_BUSY_PIN
+            int "HXD039B2 BUSY pin"
+            default 1
+    endif
+    if SCBB_LLCC68_ENABLED
+        config AXK_LLCC68_NSS_PIN
+            hex "LLCC68 NSS pin (axk encoding)"
+            default 0x4
+        config AXK_LLCC68_NRESET_PIN
+            hex "LLCC68 RESET pin (axk encoding)"
+            default 0x10E
+        config AXK_LLCC68_BUSY_PIN
+            hex "LLCC68 BUSY pin (axk encoding)"
+            default 0x0
+        config AXK_LLCC68_DIO1_PIN
+            hex "LLCC68 DIO1 pin (axk encoding)"
+            default 0x101
+    endif
+endmenu
+
+endmenu # Pin assignment
+
+endmenu # AiPi-SCBB
