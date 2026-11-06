@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 # Only set project if this is the top-level CMakeLists.txt
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(AiPi-SCBB
-        VERSION 0.1.0
+        VERSION 0.2.0
         LANGUAGES C
         DESCRIPTION "AiPi-SCBB peripheral driver library"
     )
@@ -16,7 +16,7 @@ endif()
 set(SCBB_CONFIG_HEADER_PATH   "scbb_config.h"        CACHE STRING "Path to scbb_config.h")
 
 # ─── Built-in BSP platform ─────────────────────────────────────────
-set(SCBB_BSP_PLATFORM "Ai-M6x" CACHE STRING "Built-in BSP platform (Ai-M6x | stm32f10x)")
+set(SCBB_BSP_PLATFORM "Ai-M6x" CACHE STRING "Built-in BSP platform (Ai-M6x | stm32f10x | axk)")
 
 # ─── Read module enables from scbb_config.h ────────────────────────
 # Parse SCBB_<MODULE>_ENABLED=1 defines from the generated config header
