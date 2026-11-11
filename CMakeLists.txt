@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 # Only set project if this is the top-level CMakeLists.txt
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(AiPi-SCBB
-        VERSION 0.2.0
+        VERSION 0.2.1
         LANGUAGES C
         DESCRIPTION "AiPi-SCBB peripheral driver library"
     )
