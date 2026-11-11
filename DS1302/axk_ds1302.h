@@ -6,8 +6,8 @@
  * 跨平台：纯 ACLL，GPIO + Delay BSP 通过 scbb_config.h 选取。
  *
  * @author xemowo (xemowo@qq.com)
- * @version 0.1.1
- * @date 2026-07-31
+ * @version 0.1.2
+ * @date 2026-11-10
  *
  * @copyright Copyright (c) 2026
  */
